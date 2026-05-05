@@ -1,11 +1,11 @@
 # Developer Guide
 
-Kurzreferenz für Build, Tests und Layout des **X800 Addon Installers** (Quellcode im Repository-Root).
+Quick reference for build, tests, and layout of the **X800 Addon Installer** (source code in repository root).
 
-## Voraussetzungen
+## Prerequisites
 
 - **Go** 1.21+
-- optional **Node.js** für JS-Syntax- und i18n-Checks
+- Optional **Node.js** for JS syntax and i18n checks
 
 ## Build & Start
 
@@ -14,9 +14,9 @@ Kurzreferenz für Build, Tests und Layout des **X800 Addon Installers** (Quellco
 ./main.sh start
 ```
 
-Standard-URL: `http://127.0.0.1:8765`
+Default URL: `http://127.0.0.1:8765`
 
-## Tests & Qualität
+## Tests & Quality
 
 ```bash
 go test ./...
@@ -26,24 +26,24 @@ node --check web/sidebar.js
 node scripts/check-i18n.js
 ```
 
-## Verzeichnisüberblick
+## Directory Overview
 
-| Pfad | Inhalt |
+| Path | Content |
 |------|--------|
-| `main.go`, `go.mod` | Einstieg, eingebettete `web/` |
-| `internal/api/` | HTTP-API, Handler |
-| `internal/config/` | Lokale `installer.json` |
-| `internal/ops/` | Remote-Skripte (SSH auf die Kamera) |
-| `web/` | Statische UI (`index.html`, `app.js`, `i18n.js`) |
-| `bin/wpalib/` | Eingebettete WiFi-Binary-Bündel (`go:embed`) |
+| `main.go`, `go.mod` | Entry point, embedded `web/` |
+| `internal/api/` | HTTP API, handlers |
+| `internal/config/` | Local `installer.json` |
+| `internal/ops/` | Remote scripts (SSH to camera) |
+| `web/` | Static UI (`index.html`, `app.js`, `i18n.js`) |
+| `bin/wpalib/` | Embedded WiFi binary bundle (`go:embed`) |
 
-## Konfiguration auf dem Rechner
+## Configuration on Computer
 
-Standard: `~/.config/x800_addon/installer.json` — enthält u. a. Zugangsdaten, Tailscale- und Flespi-Felder. Nicht ins Repo committen.
+Default: `~/.config/x800_addon/installer.json` — contains access data, Tailscale and Flespi fields. Do not commit to repo.
 
-## Nicht im Repository
+## Not in Repository
 
-- **Tailscale-Binaries** werden zur Laufzeit von pkgs.tailscale.com geladen (Cache unter der Benutzer-Home-Konfiguration).
-- **Firmware-Images** (`*.bin`) sind per `.gitignore` ausgeschlossen.
+- **Tailscale binaries** are loaded at runtime from pkgs.tailscale.com (cache under user home configuration).
+- **Firmware images** (`*.bin`) are excluded via `.gitignore`.
 
-Siehe auch [README.md](../README.md) und [user-guide.md](user-guide.md).
+See also [README.md](../README.md) and [user-guide.md](user-guide.md).
