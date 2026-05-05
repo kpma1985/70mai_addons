@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>X800 Addon Installer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="app.css"/>
+</head>
+<body class="nav-md">
+
+  <!-- Toast notifications -->
+  <div class="toast" id="toasts" aria-live="polite"></div>
+
+  <!-- API Token Gate -->
+  <div id="apiTokenGate" class="api-gate" hidden>
+    <div class="api-gate-card">
+      <h2 data-i18n="apigate.title">API-Zugang</h2>
+      <p class="hint" data-i18n="apigate.hint">Der Server verlangt <code>X-Addon-Token</code>.</p>
+      <label><span data-i18n="apigate.label">Token</span>
+        <input id="apiTokenInput" type="password" autocomplete="off" data-i18n-placeholder="apigate.placeholder" placeholder="Token einfügen"/>
+      </label>
+      <div class="form-actions" style="margin-top:.85rem">
+        <button type="button" class="btn btn-success" id="apiTokenSave" data-i18n="apigate.submit">Entsperren</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container body">
+    <div class="main_container">
+
+      <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+      <aside class="col-md-3 left_col menu_fixed" aria-label="Navigation" data-i18n="nav.aria" data-i18n-attr="aria-label">
+        <div class="left_col scroll-view">
+
+          <div class="navbar nav_title">
+            <a href="#" class="site_title">
+              <i class="bi bi-camera-video-fill" style="font-size:1.4rem;color:#1abb9c;margin-right:.5rem"></i>
+              <span class="logo-full" style="font-weight:700;font-size:.95rem;color:#fff">X800 Installer</span>
+            </a>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Sidebar menu -->
+          <div id="sidebar-menu" class="main_menu_side main_menu">
+            <div class="menu_section">
+              <h3 data-i18n="nav.section.main">Konfiguration</h3>
+              <ul class="nav side-menu">
+                <li>
+                  <a href="#" data-tab="connection">
+                    <i class="bi bi-plug"></i>
+                    <span data-i18n="tab.connection">Verbindung</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" data-tab="system">
+                    <i class="bi bi-cpu"></i>
+                    <span data-i18n="tab.system">System</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" data-tab="files">
+                    <i class="bi bi-folder2-open"></i>
+                    <span data-i18n="tab.files">Dateien</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" data-tab="firmware">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <span data-i18n="tab.firmware">Firmware</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div class="menu_section">
+              <h3 data-i18n="nav.section.network">Netzwerk</h3>
+              <ul class="nav side-menu">
+                <li>
+                  <a href="#" data-tab="wificlient">
+                    <i class="bi bi-wifi"></i>
+                    <span data-i18n="tab.wificlient">WiFi Modus</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" data-tab="tailscale">
+                    <i class="bi bi-shield-lock"></i>
+                    <span data-i18n="tab.tailscale">Tailscale</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" data-tab="ethernet">
+                    <i class="bi bi-ethernet"></i>
+                    <span data-i18n="tab.ethernet">Ethernet</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" data-tab="streaming">
+                    <i class="bi bi-camera-video"></i>
+                    <span data-i18n="tab.streaming">Streaming</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div class="menu_section">
+              <h3 data-i18n="nav.section.tracking">Tracking</h3>
+              <ul class="nav side-menu">
+                <li>
+                  <a href="#" data-tab="tracking">
+                    <i class="bi bi-geo-alt"></i>
+                    <span data-i18n="tab.tracking">GPS &amp; Flespi</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <!-- /sidebar menu -->
+
+          <!-- Status badges + Sidebar-Footer -->
+          <div class="sidebar-status-badges">
+            <div class="ssb-badge" id="sbBadgeCam">
+              <span class="ssb-dot"></span>
+              <span class="ssb-label" data-i18n="common.connected">Connected</span>
+            </div>
+            <div class="ssb-badge" id="sbBadgeTs">
+              <span class="ssb-dot"></span>
+              <span class="ssb-label">Tailscale</span>
+            </div>
+            <div class="ssb-badge" id="sbBadgeFlespi">
+              <span class="ssb-dot"></span>
+              <span class="ssb-label">Flespi</span>
+            </div>
+            <div class="ssb-badge" id="sbBadgeUptime">
+              <span class="ssb-dot"></span>
+              <span class="ssb-label" data-i18n="common.uptime">Uptime</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="ssb-actions">
+              <button type="button" id="btnSidebarRefresh" class="ssb-action-btn" title="Aktualisieren" aria-pressed="false" data-i18n="common.refresh" data-i18n-attr="title">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span class="ssb-label" data-i18n="common.refresh">Refresh</span>
+              </button>
+              <button type="button" id="btnSidebarConsole" class="ssb-action-btn" title="Konsole" data-i18n="common.console" data-i18n-attr="title">
+                <i class="bi bi-terminal"></i>
+                <span class="ssb-label"><span data-i18n="common.console">Konsole</span><span class="log-badge" id="logBadge" hidden></span></span>
+              </button>
+            </div>
+
+            <!-- Dark-Mode Toggle -->
+            <div class="ssb-toggle-row">
+              <span class="ssb-toggle-label ssb-label"><i class="bi bi-moon-stars" id="themeIcon"></i> <span data-i18n="common.dark">Dark</span></span>
+              <label class="ssb-switch">
+                <input type="checkbox" id="themeSwitchCheck"/>
+                <span class="ssb-slider"></span>
+              </label>
+            </div>
+
+            <!-- Language Toggle -->
+            <div class="ssb-toggle-row">
+              <span class="ssb-toggle-label ssb-label"><i class="bi bi-translate"></i> EN</span>
+              <label class="ssb-switch">
+                <input type="checkbox" id="langSwitchCheck"/>
+                <span class="ssb-slider"></span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+      <!-- ── /Sidebar ────────────────────────────────────────────────── -->
+
+      <!-- ── Top nav ────────────────────────────────────────────────── -->
+      <div class="top_nav">
+        <div class="nav_menu">
+          <div class="nav toggle">
+            <a id="menu_toggle" href="#" title="Menü" data-i18n="common.menu" data-i18n-attr="title"><i class="bi bi-list" style="font-size:1.25rem"></i></a>
+          </div>
+          <span id="topNavTitle" class="top-nav-title" data-i18n="tab.connection">Verbindung</span>
+          <span id="appVersion" class="app-version">v1.1.0-dev</span>
+          <div class="top-nav-right">
+            <span id="chipCam" class="top-chip"><span class="chip-val">—</span></span>
+            <span id="chipWifi" class="top-chip"><span class="chip-val">—</span></span>
+            <span id="chipTs" class="top-chip"><span class="chip-val">—</span></span>
+            <div id="errorBanner" class="error-banner" hidden role="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+      <!-- ── /Top nav ───────────────────────────────────────────────── -->
+
+      <!-- Log Dock (fixed bottom, above sidebar offset) -->
+      <div class="log-dock-bar" id="logDock" hidden>
+        <div class="log-dock-header">
+          <span class="log-dock-title"><i class="bi bi-terminal"></i> <span data-i18n="dock.log.title">Konsole</span></span>
+          <div class="log-dock-tools">
+            <select id="logFacilityFilter" class="log-filter" title="Facility filtern" data-i18n="dock.log.filter.title" data-i18n-attr="title">
+              <option value="all" data-i18n="dock.log.filter.all">alle</option>
+              <option value="app">app</option>
+              <option value="gps">gps</option>
+              <option value="ssh">ssh</option>
+              <option value="flespi">flespi</option>
+              <option value="tailscale">tailscale</option>
+            </select>
+            <span class="log-resize-hint" data-i18n="dock.log.resize">Größe unten rechts ändern</span>
+            <button type="button" id="btnLogClear" class="btn btn-sm btn-outline-secondary" title="Log löschen" data-i18n="dock.log.clear.title" data-i18n-attr="title"><i class="bi bi-x-lg"></i></button>
+          </div>
+        </div>
+        <div class="log-console" id="appLogConsole">
+          <span class="log-empty" data-i18n="dock.log.empty">— noch keine Aktion —</span>
+        </div>
+      </div>
+
+      <!-- ── Content ───────────────────────────────────────────────── -->
+      <div class="right_col" role="main">
+
+        <!-- ── Connection panel ──────────────────────────────────────── -->
+        <section id="panel-connection" class="panel active" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left">
+              <h3 data-i18n="conn.title">Verbindung</h3>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h4 data-i18n="conn.lead">Host, Tailscale-Peer oder IP — SSH</h4>
+                </div>
+                <div class="x_content">
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label data-i18n="conn.host">Host / IP</label>
+                      <input class="form-control" id="host" value="192.168.0.1" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="conn.ssh_port">SSH-Port</label>
+                      <input class="form-control" id="ssh_port" type="number" inputmode="numeric" value="22"/>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="conn.password">SSH-Passwort (root)</label>
+                    <input class="form-control" id="password" type="password" autocomplete="off" data-i18n-placeholder="conn.password.placeholder" placeholder="oft leer"/>
+                  </div>
+                  <div id="peerBox" class="peer-box">
+                    <div class="form-group">
+                      <label data-i18n="conn.peers.label">Tailscale Host</label>
+                      <select class="form-control" id="tsPeerSelect">
+                        <option value="" data-i18n="conn.peers.manual">-- Tailscale Host wählen --</option>
+                      </select>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-default" id="btnTsPeersRefresh" data-i18n="conn.peers.refresh">Aktualisieren</button>
+                  </div>
+                  <div class="checkbox" style="margin-top:.85rem">
+                    <label>
+                      <input type="checkbox" id="autoConnect"/>
+                      <span data-i18n="conn.autoconnect">Beim Start automatisch verbinden</span>
+                    </label>
+                  </div>
+                  <!-- Hidden compat inputs -->
+                  <input type="hidden" id="transport" value="ssh"/>
+                  <input type="hidden" id="telnet_port" value="23"/>
+                  <input type="hidden" id="iptables_path" value=""/>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-primary" id="btnTest" data-i18n="conn.test">Test Connection</button>
+                    <button type="button" class="btn btn-success" id="btnTestSave" data-i18n="conn.testsave">Save and Connect</button>
+                    <button type="button" class="btn btn-danger" id="btnRemoveConn" data-i18n="conn.remove">Remove</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── System panel ───────────────────────────────────────────── -->
+        <section id="panel-system" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left">
+              <h3 data-i18n="sys.title">System</h3>
+            </div>
+            <div class="title_right">
+              <button type="button" class="btn btn-sm btn-danger pull-right" id="btnSystemReboot" data-i18n="sys.reboot">Reboot</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_content">
+                  <div id="systemSections" class="sys-dash sys-dash-tight"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Files panel ────────────────────────────────────────────── -->
+        <section id="panel-files" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left">
+              <h3 data-i18n="files.title">Dateien</h3>
+            </div>
+            <div class="title_right">
+              <div class="file-toolbar pull-right">
+                <button type="button" class="btn btn-sm btn-default" id="btnFilesUp" title="Übergeordnet" disabled data-i18n="files.up.title" data-i18n-attr="title"><span data-i18n="files.up">↑</span></button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnFilesList" data-i18n="files.open">Öffnen</button>
+                <button type="button" class="btn btn-sm btn-default" id="btnFilesView" disabled data-i18n="files.view" data-i18n-attr="aria-label"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-sm btn-default" id="btnFilesDownload" disabled data-i18n="files.download" data-i18n-attr="aria-label"><i class="bi bi-download" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-sm btn-default" id="btnFilesUpload" data-i18n="files.upload" data-i18n-attr="aria-label"><i class="bi bi-upload" aria-hidden="true"></i></button>
+                <input type="file" id="fileUploadInput" hidden/>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_content">
+                  <div class="form-group">
+                    <label data-i18n="files.path">Pfad</label>
+                    <input class="form-control" id="filePath" value="/mnt/sd" autocomplete="off"/>
+                  </div>
+                  <div class="breadcrumb-bar" id="fileBreadcrumb" aria-label="Aktueller Pfad" data-i18n="files.breadcrumb" data-i18n-attr="aria-label"></div>
+                  <div class="table-responsive" style="max-height:min(52vh,28rem)">
+                    <table class="table table-striped file-table" id="fileTable">
+                      <thead>
+                        <tr>
+                          <th data-i18n="files.table.name">Name</th>
+                          <th data-i18n="files.table.type">Typ</th>
+                          <th data-i18n="files.table.size">Größe</th>
+                          <th data-i18n="files.table.perm">Rechte</th>
+                          <th data-i18n="files.table.time">Zeit</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td colspan="5" data-i18n="files.loading">Verzeichnis laden …</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <pre id="fileViewModal" class="file-view" hidden></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Firmware panel ─────────────────────────────────────────── -->
+        <section id="panel-firmware" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left">
+              <h3 data-i18n="fw.title">Firmware Update</h3>
+            </div>
+            <div class="title_right"></div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_content">
+                  <div class="form-grid-3">
+                    <div class="form-group">
+                      <label data-i18n="fw.file">Firmware-Datei</label>
+                      <input class="form-control" type="file" id="firmwareFile" accept=".bin"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="fw.method">Upload-Methode</label>
+                      <select class="form-control" id="firmwareMethod">
+                        <option value="ssh">SSH</option>
+                        <option value="ftp">FTP</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="fw.target">Ziel</label>
+                      <input class="form-control" value="/mnt/sd/FW98530A.bin" readonly/>
+                    </div>
+                  </div>
+                  <label class="check" style="margin-top:.65rem">
+                    <input type="checkbox" id="firmwareReboot"/>
+                    <span data-i18n="fw.reboot">Nach Upload sync ausführen und Kamera neu starten</span>
+                  </label>
+                  <div class="warn-inline" style="margin-top:.75rem" data-i18n="fw.warning">
+                    Die Kamera flasht nur eine Datei mit exakt dem Namen FW98530A.bin im SD-Root. Strom während Flash/Boot nicht trennen.
+                  </div>
+                  <div class="form-actions" style="margin-top:.85rem">
+                    <button type="button" class="btn btn-danger" id="btnFirmwareUpload" data-i18n="fw.upload">Firmware hochladen</button>
+                  </div>
+                  <pre id="firmwareResult" class="file-view" hidden></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── WiFi panel ─────────────────────────────────────────────── -->
+        <section id="panel-wificlient" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left"><h3 data-i18n="tab.wificlient">WiFi Modus</h3></div>
+          <div class="title_right"></div>
+          </div>
+          <div class="row">
+            <!-- Status -->
+            <div class="col-md-12">
+              <div class="fwd-status-bar" id="wifiStatusBar">
+                <div class="status-dot unknown" id="wifiDot"></div>
+                <div style="flex:1;min-width:0">
+                  <div class="fwd-label unknown" id="wifiLabel" data-i18n="common.status.unknown">UNBEKANNT</div>
+                  <div class="fwd-detail" id="wifiDetail" data-i18n="common.status.not_loaded">Status noch nicht abgerufen</div>
+                </div>
+              </div>
+            </div>
+            <!-- Requirements -->
+            <div class="col-md-6">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h4 data-i18n="wifi.req.title">Anforderungen</h4>
+                  <span id="cardDotWifi" class="card-status-dot"></span>
+                  <button type="button" class="btn btn-sm btn-success" id="btnInstallRequirements" data-i18n="wifi.req.install">Installieren</button>
+                </div>
+                <div class="x_content">
+                  <div class="req-grid">
+                    <div class="metric-tile"><span data-i18n="wifi.req.wpalib">wpalib</span><strong id="wpalibStatus">—</strong></div>
+                    <div class="metric-tile"><span data-i18n="wifi.req.wrapper">main_app Wrapper</span><strong id="wifiWrapperStatus">—</strong></div>
+                  </div>
+                  <p class="hint" style="margin-top:.75rem" data-i18n="wifi.req.hint">Tailscale-Autostart im Tab <strong>Tailscale</strong>.</p>
+                </div>
+              </div>
+            </div>
+            <!-- Client config -->
+            <div class="col-md-6">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h4 data-i18n="wifi.client.title">WLAN-Client</h4>
+                </div>
+                <div class="x_content" style="position:relative">
+                  <div id="wifiClientLock" class="wifi-client-lock">
+                    <div data-i18n="wifi.lock.unknown">Anforderungen unbekannt — bitte Aktualisieren.</div>
+                  </div>
+                  <div class="wifi-scan-row">
+                    <button type="button" class="btn btn-default btn-sm" id="btnWifiScan"><i class="fa fa-search"></i> <span data-i18n="wifi.scan">Netzwerke scannen</span></button>
+                    <span id="wifiScanStatus" class="wifi-scan-status"></span>
+                  </div>
+                  <div id="wifiScanResults" class="wifi-scan-results" style="display:none"></div>
+                  <div class="form-grid-3">
+                    <div class="form-group">
+                      <label data-i18n="wifi.ssid">SSID</label>
+                      <input class="form-control" type="text" id="wifiSSID" data-i18n-placeholder="wifi.ssid.placeholder" placeholder="Netzwerkname" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="wifi.pwd">Passwort</label>
+                      <input class="form-control" type="password" id="wifiPWD" data-i18n-placeholder="wifi.pwd.placeholder" placeholder="leer = offen" autocomplete="new-password"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="wifi.staticip">Static IP (opt.)</label>
+                      <input class="form-control" type="text" id="wifiStaticIP" data-i18n-placeholder="wifi.staticip.placeholder" placeholder="leer = DHCP" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="wifi.mask">Netzmaske (opt.)</label>
+                      <input class="form-control" type="text" id="wifiMask" data-i18n-placeholder="wifi.mask.placeholder" placeholder="255.255.255.0" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="wifi.gw">Gateway</label>
+                      <input class="form-control" type="text" id="wifiGW" data-i18n-placeholder="wifi.gw.placeholder" placeholder="z. B. 192.168.1.1" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="wifi.dns">DNS (opt.)</label>
+                      <input class="form-control" type="text" id="wifiDNS" data-i18n-placeholder="wifi.dns.placeholder" placeholder="8.8.8.8" autocomplete="off"/>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-success" id="btnWifiConnect" data-i18n="wifi.connect">Verbinden &amp; Neustart</button>
+                    <button type="button" class="btn btn-default" id="btnWifiHealth" data-i18n="wifi.health">Health-Check</button>
+                    <button type="button" class="btn btn-default" id="btnWifiDisconnect" data-i18n="wifi.disconnect">Trennen → AP</button>
+                  </div>
+                  <div id="wifiHealthResult" class="hint" style="margin-top:.65rem"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Tailscale panel ─────────────────────────────────────────── -->
+        <section id="panel-tailscale" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left"><h3 data-i18n="tab.tailscale">Tailscale</h3></div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_title"><h4 data-i18n="ts.net.title">Tailscale verbinden</h4><span id="cardDotTs" class="card-status-dot"></span></div>
+                <div class="x_content">
+                  <div class="fwd-status-bar" id="tsStatusBar">
+                    <div class="status-dot unknown" id="tsDot"></div>
+                    <div style="flex:1;min-width:0">
+                      <div class="fwd-label unknown" id="tsLabel" data-i18n="common.status.unknown">UNBEKANNT</div>
+                      <div class="fwd-detail" id="tsDetail" data-i18n="common.status.not_loaded">Status noch nicht abgerufen</div>
+                    </div>
+                  </div>
+                  <div id="tsConnectLock" class="connect-lock-inline">
+                    <div data-i18n="ts.lock.not_installed">Tailscale ist auf der Kamera noch nicht installiert.</div>
+                  </div>
+                  <p class="hint" data-i18n="ts.install.hint" style="margin-top:.75rem">Binaries werden lokal vorbereitet und per SSH nach <code>/mnt/sd</code> kopiert.</p>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-success" id="btnTsInstall" data-i18n="ts.install">Installieren</button>
+                    <button type="button" class="btn btn-default" id="btnTsStart" data-i18n="ts.start">tailscaled starten</button>
+                    <button type="button" class="btn btn-default" id="btnTsAutostartStatus" data-i18n="ts.autostart.status">Status</button>
+                  </div>
+                  <div class="warn-inline" data-i18n="ts.net.warn">Authkey liegt im Klartext in <code>~/.config/x800_addon/installer.json</code>. Datei schützen oder Key nach erfolgreichem Join entfernen.</div>
+                  <div class="form-group" style="margin-top:.75rem">
+                    <label data-i18n="ts.authkey">Authkey</label>
+                    <input class="form-control ts-connect-control" id="ts_key" disabled type="password" autocomplete="off" data-i18n-placeholder="ts.authkey.placeholder" placeholder="tskey-auth-..."/>
+                  </div>
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label data-i18n="ts.hostname">Hostname</label>
+                      <input class="form-control ts-connect-control" id="ts_hostname" disabled data-i18n-placeholder="ts.hostname.placeholder" placeholder="x800-dashcam" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="ts.routes">Subnet Routes</label>
+                      <input class="form-control ts-connect-control" id="ts_routes" disabled type="hidden"/>
+                      <div id="tsRouteChoices" class="route-choice-list">
+                        <span class="hint" data-i18n="ts.routes.hint">Lokale Netze werden beim Status geladen.</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="switch-row">
+                    <label class="check"><input class="ts-connect-control" type="checkbox" id="ts_exit_node" disabled/> <span data-i18n="ts.exit_node">Exit Node</span></label>
+                    <label class="check"><input class="ts-connect-control" type="checkbox" id="ts_accept_routes" disabled/> <span data-i18n="ts.accept_routes">Routen akzeptieren</span></label>
+                    <label class="check"><input class="ts-connect-control" type="checkbox" id="clear_ts_key" disabled/> <span data-i18n="ts.clear_key">Key nach Up entfernen</span></label>
+                    <label class="check"><input class="ts-connect-control" type="checkbox" id="ts_autostart" disabled/> <span data-i18n="ts.autostart.title">Autostart</span></label>
+                  </div>
+                  <div id="tsAutostartStatus" class="hint" style="margin-top:.65rem">—</div>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-default ts-connect-control" id="btnTsKeySave" disabled data-i18n="ts.save">Konfig speichern</button>
+                    <button type="button" class="btn btn-success ts-connect-control" id="btnTsUp" disabled data-i18n="ts.up">tailscale up</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Streaming panel ────────────────────────────────────────── -->
+        <section id="panel-streaming" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left"><h3 data-i18n="stream.title">Streaming</h3></div>
+          <div class="title_right"></div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_content">
+                  <div class="stream-preview-wrap">
+                    <p class="stream-player-heading" data-i18n="stream.player_heading">HTML5-Player</p>
+                    <div class="stream-html5-player" id="streamPlayerBox" aria-label="Videovorschau">
+                      <div class="stream-player-placeholder" id="streamPlayerPlaceholder" data-i18n="stream.player_placeholder">Stream wählen und „Abspielen“ drücken</div>
+                      <div class="stream-player-error" id="streamPlayerError" role="status" hidden></div>
+                      <img id="mjpegStreamPreview" class="stream-mjpeg" alt="" width="1920" height="1080" decoding="async" hidden />
+                      <video id="rtspPreview" class="stream-preview" controls playsinline muted preload="metadata" hidden></video>
+                    </div>
+                    <p class="hint" data-i18n="stream.hint">Browser kann RTSP meist nicht direkt — <strong>Kopieren</strong> und VLC/ffplay nutzen.</p>
+                  </div>
+                  <div class="stream-list" id="streamList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Tracking panel ─────────────────────────────────────────── -->
+        <section id="panel-tracking" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left"><h3 data-i18n="tab.tracking">GPS &amp; Flespi</h3></div>
+          </div>
+          <div class="row">
+
+            <!-- GPS -->
+            <div class="col-md-6">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h4 data-i18n="gps.title">GPS</h4>
+                </div>
+                <div class="x_content">
+                  <div class="tile-stats-grid">
+                    <div class="tile-mini"><span data-i18n="gps.available">available</span><strong id="gpsAvail">-</strong></div>
+                    <div class="tile-mini"><span data-i18n="gps.lat">lat</span><strong id="gpsLat">-</strong></div>
+                    <div class="tile-mini"><span data-i18n="gps.lon">lon</span><strong id="gpsLon">-</strong></div>
+                    <div class="tile-mini"><span data-i18n="gps.time">time</span><strong id="gpsTime">-</strong></div>
+                    <div class="tile-mini"><span data-i18n="gps.source">source</span><strong id="gpsSource">-</strong></div>
+                    <div class="tile-mini"><span data-i18n="gps.tty">tty</span><strong id="gpsDevices">-</strong></div>
+                  </div>
+                  <div id="gpsMapsLink" class="link-row" style="margin-top:.65rem;font-size:.84rem" hidden></div>
+                  <div id="gpsMapEmpty" class="warn-inline" style="margin-top:.75rem" data-i18n="gps.map.empty">Kein GPS-Fix. Tracking prüft /mnt/sd/gps_state.txt. Automatische TTY-Probe ist deaktiviert, um nvt_set_termios-Warnungen in dmesg zu vermeiden. /dev/ttyUSB6 ist Quectel-binär und wird nur angezeigt, nicht als NMEA geparst.</div>
+                  <iframe id="gpsMap" class="gps-map" title="GPS-Karte" data-i18n="gps.map.title" data-i18n-attr="title" loading="lazy" referrerpolicy="no-referrer" hidden></iframe>
+                  <div class="form-actions" style="margin-top:.75rem">
+                    <button type="button" class="btn btn-default" id="btnGpsRefresh" data-i18n="gps.refresh">Laden</button>
+                    <button type="button" class="btn btn-default" id="btnGpsDebug" data-i18n="gps.debug">Debug</button>
+                    <button type="button" class="btn btn-primary" id="btnGpsLive" data-i18n="gps.live_console">Live-Konsole</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Flespi Daemon -->
+            <div class="col-md-6">
+              <div class="x_panel">
+                <div class="x_title"><h4 data-i18n="flespi.daemon.title">Flespi Daemon</h4><span id="cardDotDaemon" class="card-status-dot"></span></div>
+                <div class="x_content">
+                  <div class="fwd-status-bar compact" id="daemonStatusBar">
+                    <div class="status-dot unknown" id="daemonDot"></div>
+                    <div style="flex:1;min-width:0">
+                      <div class="fwd-label unknown" id="daemonLabel" data-i18n="common.status.unknown">UNBEKANNT</div>
+                      <div class="fwd-detail" id="daemonDetail" data-i18n="common.status.not_loaded">Status noch nicht abgerufen</div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label data-i18n="flespi.token">Token</label>
+                    <input class="form-control" id="flespi_token" type="password" autocomplete="off" data-i18n-placeholder="flespi.token.placeholder" placeholder="FlespiToken ..."/>
+                  </div>
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label data-i18n="flespi.host">API-Host</label>
+                      <input class="form-control" id="flespi_host" placeholder="https://flespi.io" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="flespi.device_id">Device-ID</label>
+                      <input class="form-control" id="flespi_device_id" data-i18n-placeholder="flespi.device_id.placeholder" placeholder="numerisch, z. B. 123456" autocomplete="off"/>
+                    </div>
+                  </div>
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label data-i18n="flespi.device_type_id">Device-Type-ID (optional)</label>
+                      <input class="form-control" id="flespi_device_type_id" data-i18n-placeholder="flespi.device_type_id.placeholder" placeholder="nur falls Auto-Lookup fehlschlägt" autocomplete="off"/>
+                    </div>
+                    <div class="form-group">
+                      <label data-i18n="flespi.interval">Update alle X Sekunden</label>
+                      <input class="form-control" id="flespi_interval" type="number" min="5" max="3600" step="1" value="30" autocomplete="off"/>
+                    </div>
+                  </div>
+                  <label class="check" style="margin-top:.65rem">
+                    <input type="checkbox" id="flespi_autostart"/>
+                    <span data-i18n="flespi.autostart">Autostart</span>
+                  </label>
+                  <p class="hint" style="margin-top:.35rem" data-i18n="flespi.autostart_hint">Bei Autostart wird der Token automatisch in /mnt/sd/flespi.conf gespeichert.</p>
+                  <p class="hint" style="margin-top:.35rem" data-i18n="flespi.device_type_hint">Device-ID ist numerisch. Werte wie ftp sind Kanal-/Protokollnamen und funktionieren hier nicht.</p>
+                  <label class="check" style="margin-top:.75rem;display:flex;align-items:flex-start;gap:8px">
+                    <input type="checkbox" id="flespi_reset_camera" style="margin-top:2px"/>
+                    <span data-i18n="flespi.reset_remove_camera">Zusätzlich Flespi auf der SD-Karte der Kamera entfernen (SSH)</span>
+                  </label>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-primary" id="btnFlespiTest" data-i18n="flespi.test">Token testen</button>
+                    <button type="button" class="btn btn-default" id="btnFlespiDeploy" data-i18n="flespi.deploy">Deployment</button>
+                    <button type="button" class="btn btn-default" id="btnDaemonStart" data-i18n="flespi.start">Start</button>
+                    <button type="button" class="btn btn-danger" id="btnDaemonStop" data-i18n="flespi.stop">Stop</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnFlespiReset" data-i18n="flespi.reset">Konfiguration zurücksetzen</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ── Ethernet panel ─────────────────────────────────────────── -->
+        <section id="panel-ethernet" class="panel" role="tabpanel">
+          <div class="page-title">
+            <div class="title_left"><h3 data-i18n="tab.ethernet">Ethernet</h3></div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="x_panel">
+                <div class="x_title"><h4 data-i18n="eth.title">UP04 / AX88179 Ethernet</h4><span id="cardDotEth" class="card-status-dot"></span></div>
+                <div class="x_content">
+                  <div class="fwd-status-bar" id="ethStatusBar">
+                    <div class="status-dot unknown" id="ethDot"></div>
+                    <div style="flex:1;min-width:0">
+                      <div class="fwd-label unknown" id="ethLabel" data-i18n="common.status.unknown">UNBEKANNT</div>
+                      <div class="fwd-detail" id="ethDetail" data-i18n="common.status.not_loaded">Status noch nicht abgerufen</div>
+                    </div>
+                  </div>
+                  <p class="hint" style="margin-top:.75rem" data-i18n="eth.hint">ASIX AX88179 USB 3.0 Gigabit Ethernet über UP04 Hardwire Kit. Stromversorgung und USB-Kabel prüfen.</p>
+                  <label class="check" style="margin-top:.65rem">
+                    <input type="checkbox" id="ethAutostart"/>
+                    <span data-i18n="eth.autostart">Autostart: Ethernet beim Kamera-Boot aktivieren</span>
+                  </label>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-success" id="btnEthEnable" data-i18n="eth.enable">Aktivieren</button>
+                    <button type="button" class="btn btn-danger" id="btnEthDisable" data-i18n="eth.disable">Deaktivieren</button>
+                    <button type="button" class="btn btn-default" id="btnEthStatus" data-i18n="common.refresh">Status</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+      <!-- ── /Content ───────────────────────────────────────────────── -->
+
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="sidebar.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+ Hidden (except .gitignore, .github, .gitattributes)
+.*
+*.log
+!.gitignore
+!.github/
+!.gitattributes
+
+
+dist/
