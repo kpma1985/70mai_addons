@@ -63,7 +63,8 @@ Open **http://localhost:8765** in your browser.
 ## Documentation
 
 - [User Guide](docs/user-guide.md)
-- [Release Notes](docs/release-notes.md)
+- [Developer Guide](docs/developer-guide.md)
+- [Hardware Context](docs/hardware-context.md)
 
 ---
 
